@@ -32,7 +32,12 @@ void send(message_t message, mailbox_t* mailbox_ptr) {
     }
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+    if (argc != 3) {  // Expecting exactly 2 arguments after the executable name
+        printf("Usage: %s <mechanism(1/2)> <input_file>\n", argv[0]);
+        return 1;
+    }
+
     //補捉ctrl+c，強制結束時清理資源
     signal(SIGINT, signal_handler);
 
@@ -40,7 +45,6 @@ int main() {
     double time_taken;
     double total_time = 0;
     key_t msg_key;
-    int msqid;
     int shmid;
     mailbox_t mailbox;
     message_t message;
@@ -67,10 +71,10 @@ int main() {
     }
 
     // 选择通信方式：消息传递或共享内存
-    printf("\033[36m\033[01mChoose communication method (1 for Message Passing, 2 for shared memory): \033[0m ");
-    int choice;
-    scanf("%d", &choice);
-    
+    int choice = atoi(argv[1]);
+    printf("\033[36m\033[01mChoose communication method (1 for Message Passing, 2 for shared memory):\033[0m %d\n", choice);
+    // scanf("%d", &choice);
+
     if (choice == MESSAGE_PASSING) {
         mailbox.flag = MESSAGE_PASSING;
         // 创建消息队列
@@ -96,14 +100,15 @@ int main() {
         printf("Invalid choice\n");
         return 0;
     }
-
-    FILE *fmessage = fopen("message.txt", "r");
+    
+    // 打开 input 文件
+    FILE *fmessage = fopen(argv[2], "r");
     if (fmessage == NULL) {
-        perror("Error opening message.txt");
+        perror("Error opening input file");
         exit(EXIT_FAILURE);
     }
 
-    printf("\033[36m\033[01mInput 'exit' to exit\033[0m \n");
+    // printf("\033[36m\033[01mInput 'exit' to exit\033[0m \n");
     while (1) {
         sem_wait(sem_sender);
 
@@ -115,7 +120,7 @@ int main() {
             message.mtext[strcspn(message.mtext, "\n")] = '\0'; // 去除换行符
             printf("%s\n", message.mtext);
         } else {
-            perror("fgets()");
+            perror("fgets()"); // 读取文件失败
             break;
         }
 
@@ -127,15 +132,32 @@ int main() {
 
         sem_post(sem_receiver);
 
-        if (strcmp(message.mtext, "exit") == 0) {
-            printf("\033[31m\033[01mexit!\033[0m\n");
+        if (feof(fmessage)) {
+            sem_wait(sem_sender);
+            strcpy(message.mtext, "exit");
+
+            clock_gettime(CLOCK_MONOTONIC, &start);
+            send(message, &mailbox);
+            clock_gettime(CLOCK_MONOTONIC, &end);
+            time_taken = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) * 1e-9;
+            total_time += time_taken;
+
+            printf("\033[31m\033[01mEnd of input file! exit!\033[0m\n");
+            sem_post(sem_receiver);
             break;
         }
+
+        // if (strcmp(message.mtext, "exit") == 0) {
+        //     printf("\033[31m\033[01mexit!\033[0m\n");
+        //     break;
+        // }
     }
 
     printf("Total time taken in sending msg: %f s\n", total_time);
     fclose(fmessage);
 
+    sem_close(sem_receiver);
+    sem_close(sem_sender);
     sem_unlink("/sem_receiver");
     sem_unlink("/sem_sender");
     

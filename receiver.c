@@ -13,6 +13,7 @@ void signal_handler(int signum) {
 
 void receive(message_t* message_ptr, mailbox_t* mailbox_ptr) {
     if (mailbox_ptr->flag == MESSAGE_PASSING) {
+        // printf("msgrcv\n");
         if(msgrcv(mailbox_ptr->storage.msqid, message_ptr, sizeof(*message_ptr) - sizeof(long), SENDER, IPC_NOWAIT) == -1){
             msgrcv(mailbox_ptr->storage.msqid, message_ptr, sizeof(*message_ptr) - sizeof(long), SENDER_EXIT, IPC_NOWAIT);
         }
@@ -22,7 +23,12 @@ void receive(message_t* message_ptr, mailbox_t* mailbox_ptr) {
     }
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+    if (argc != 2){ // Expecting exactly 1 argument after the executable name
+        printf("Usage: %s <mechanism(1/2)>\n", argv[0]);
+        return 1;
+    }
+
     //補捉ctrl+c，強制結束時清理資源
     signal(SIGINT, signal_handler);
 
@@ -56,9 +62,9 @@ int main() {
     }
 
     // 选择通信方式：消息传递或共享内存
-    printf("\033[36m\033[01mChoose communication method (1 for Message Passing, 2 for shared memory): \033[0m ");
-    int choice;
-    scanf("%d", &choice);
+    int choice = atoi(argv[1]);
+    printf("\033[36m\033[01mChoose communication method (1 for Message Passing, 2 for shared memory):\033[0m %d\n ", choice);
+    // scanf("%d", &choice);
     
     if (choice == MESSAGE_PASSING) {
         mailbox.flag = MESSAGE_PASSING;
@@ -88,6 +94,7 @@ int main() {
 
     while (1) {
         sem_wait(sem_receiver);
+        // printf("get sem_receiver\n");
 
         clock_gettime(CLOCK_MONOTONIC, &start);
         receive(&message, &mailbox);
@@ -95,9 +102,10 @@ int main() {
         time_taken = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) * 1e-9;
         total_time += time_taken;
 
-        printf("\033[36m\033[01mReceiver received:\033[0m %s\n", message.mtext);
-        if (strcmp(message.mtext, "exit") == 0) {
-            printf("\033[31m\033[01msender exit!\033[0m\n");
+        if (strcmp(message.mtext, "exit") != 0) {
+            printf("\033[36m\033[01mReceiver received:\033[0m %s\n", message.mtext);
+        }else if (strcmp(message.mtext, "exit") == 0) {
+            printf("\033[31m\033[01mSender exit!\033[0m\n");
             break;
         }
 
@@ -106,6 +114,8 @@ int main() {
 
     printf("Total time taken in receiving msg: %f s\n", total_time);
 
+    sem_close(sem_receiver);
+    sem_close(sem_sender);
     sem_unlink("/sem_receiver");
     sem_unlink("/sem_sender");
 
