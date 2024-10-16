@@ -112,28 +112,30 @@ int main(int argc, char *argv[]) {
     while (1) {
         sem_wait(sem_sender);
 
-        printf("\033[36m\033[01mSender input: \033[0m ");
         // fgets(message.mtext, sizeof(message.mtext), stdin); // 读取用户输入
         // message.mtext[strcspn(message.mtext, "\n")] = '\0'; // 去除换行符
         // 从文件读取消息
         if (fgets(message.mtext, sizeof(message.mtext), fmessage) != NULL) {
             message.mtext[strcspn(message.mtext, "\n")] = '\0'; // 去除换行符
+            printf("\033[36m\033[01mSender input: \033[0m ");
             printf("%s\n", message.mtext);
-        } else {
+        } else if(!feof(fmessage)){ //fgets 回傳 NULL 且並非 EOF
             perror("fgets()"); // 读取文件失败
             break;
         }
 
-        clock_gettime(CLOCK_MONOTONIC, &start);
-        send(message, &mailbox);
-        clock_gettime(CLOCK_MONOTONIC, &end);
-        time_taken = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) * 1e-9;
-        total_time += time_taken;
+        if(!feof(fmessage)){
+            clock_gettime(CLOCK_MONOTONIC, &start);
+            send(message, &mailbox);
+            clock_gettime(CLOCK_MONOTONIC, &end);
+            time_taken = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) * 1e-9;
+            total_time += time_taken;
 
-        sem_post(sem_receiver);
+            sem_post(sem_receiver);
+        }
 
         if (feof(fmessage)) {
-            sem_wait(sem_sender);
+            // printf("debug\n");
             strcpy(message.mtext, "exit");
 
             clock_gettime(CLOCK_MONOTONIC, &start);
