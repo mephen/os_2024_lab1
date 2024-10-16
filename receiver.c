@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
     sem_receiver = sem_open("/sem_receiver", O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, 0);
     sem_sender = sem_open("/sem_sender", O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, 1);
     if (sem_receiver == SEM_FAILED || sem_sender == SEM_FAILED) {
-        printf("semaphore exist\n");
+        // printf("semaphore exist\n");
         sem_receiver = sem_open("/sem_receiver", O_RDWR);
         sem_sender = sem_open("/sem_sender", O_RDWR);
         
@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
 
     // 选择通信方式：消息传递或共享内存
     int choice = atoi(argv[1]);
-    printf("\033[36m\033[01mChoose communication method (1 for Message Passing, 2 for shared memory):\033[0m %d\n ", choice);
+    printf("\033[36m\033[01mChoose communication method (1 for Message Passing, 2 for shared memory):\033[0m %d\n", choice);
     // scanf("%d", &choice);
     
     if (choice == MESSAGE_PASSING) {

@@ -119,12 +119,7 @@ int main(int argc, char *argv[]) {
             message.mtext[strcspn(message.mtext, "\n")] = '\0'; // 去除换行符
             printf("\033[36m\033[01mSender input: \033[0m ");
             printf("%s\n", message.mtext);
-        } else if(!feof(fmessage)){ //fgets 回傳 NULL 且並非 EOF
-            perror("fgets()"); // 读取文件失败
-            break;
-        }
-
-        if(!feof(fmessage)){
+            
             clock_gettime(CLOCK_MONOTONIC, &start);
             send(message, &mailbox);
             clock_gettime(CLOCK_MONOTONIC, &end);
@@ -132,9 +127,7 @@ int main(int argc, char *argv[]) {
             total_time += time_taken;
 
             sem_post(sem_receiver);
-        }
-
-        if (feof(fmessage)) {
+        }else if (feof(fmessage)) { //fgets 回傳 NULL 且為 EOF (fgets 會讀取到 \n 或 EOF 或讀取失敗才會回傳 NULL)
             // printf("debug\n");
             strcpy(message.mtext, "exit");
 
@@ -147,12 +140,10 @@ int main(int argc, char *argv[]) {
             printf("\033[31m\033[01mEnd of input file! exit!\033[0m\n");
             sem_post(sem_receiver);
             break;
+        } else if(!feof(fmessage)){ //fgets 回傳 NULL 且並非 EOF
+            perror("fgets()"); // 读取文件失败
+            break;
         }
-
-        // if (strcmp(message.mtext, "exit") == 0) {
-        //     printf("\033[31m\033[01mexit!\033[0m\n");
-        //     break;
-        // }
     }
 
     printf("Total time taken in sending msg: %f s\n", total_time);
