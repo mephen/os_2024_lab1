@@ -63,10 +63,10 @@ int main(int argc, char *argv[]) {
 
     // 选择通信方式：消息传递或共享内存
     int choice = atoi(argv[1]);
-    printf("\033[36m\033[01mChoose communication method (1 for Message Passing, 2 for shared memory):\033[0m %d\n", choice);
     // scanf("%d", &choice);
     
     if (choice == MESSAGE_PASSING) {
+        printf("\033[36m\033[01mMessage Passing\033[0m\n");
         mailbox.flag = MESSAGE_PASSING;
         // 创建消息队列
         mailbox.storage.msqid = msgget(msg_key, IPC_CREAT | S_IRUSR | S_IWUSR);
@@ -75,6 +75,7 @@ int main(int argc, char *argv[]) {
             return 0;
         }
     } else if (choice == SHARED_MEMORY) {
+        printf("\033[36m\033[01mShared Memory\033[0m\n");
         mailbox.flag = SHARED_MEMORY;
         // 创建共享内存
         shmid = shmget(msg_key, 1024, IPC_CREAT | S_IRUSR | S_IWUSR);
@@ -103,7 +104,7 @@ int main(int argc, char *argv[]) {
         total_time += time_taken;
 
         if (strcmp(message.mtext, "exit") != 0) {
-            printf("\033[36m\033[01mReceiver received:\033[0m %s\n", message.mtext);
+            printf("\033[36m\033[01mReceiving message:\033[0m %s\n", message.mtext);
         }else if (strcmp(message.mtext, "exit") == 0) {
             printf("\033[31m\033[01mSender exit!\033[0m\n");
             break;

@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
     sem_receiver = sem_open("/sem_receiver", O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, 0);
     sem_sender = sem_open("/sem_sender", O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, 1);
     if (sem_receiver == SEM_FAILED || sem_sender == SEM_FAILED) {
-        printf("semaphore exist\n");
+        // printf("semaphore exist\n");
         sem_receiver = sem_open("/sem_receiver", O_RDWR);
         sem_sender = sem_open("/sem_sender", O_RDWR);
         
@@ -72,10 +72,10 @@ int main(int argc, char *argv[]) {
 
     // 选择通信方式：消息传递或共享内存
     int choice = atoi(argv[1]);
-    printf("\033[36m\033[01mChoose communication method (1 for Message Passing, 2 for shared memory):\033[0m %d\n", choice);
     // scanf("%d", &choice);
 
     if (choice == MESSAGE_PASSING) {
+        printf("\033[36m\033[01mMessage Passing\033[0m\n");
         mailbox.flag = MESSAGE_PASSING;
         // 创建消息队列
         mailbox.storage.msqid = msgget(msg_key, IPC_CREAT | S_IRUSR | S_IWUSR);
@@ -84,6 +84,7 @@ int main(int argc, char *argv[]) {
             return 0;
         }
     } else if (choice == SHARED_MEMORY) {
+        printf("\033[36m\033[01mShared Memory\033[0m\n");
         mailbox.flag = SHARED_MEMORY;
         // 创建共享内存
         shmid = shmget(msg_key, 1024, IPC_CREAT | S_IRUSR | S_IWUSR);
@@ -117,7 +118,7 @@ int main(int argc, char *argv[]) {
         // 从文件读取消息
         if (fgets(message.mtext, sizeof(message.mtext), fmessage) != NULL) {
             message.mtext[strcspn(message.mtext, "\n")] = '\0'; // 去除换行符
-            printf("\033[36m\033[01mSender input: \033[0m ");
+            printf("\033[36m\033[01mSending message: \033[0m ");
             printf("%s\n", message.mtext);
             
             clock_gettime(CLOCK_MONOTONIC, &start);
