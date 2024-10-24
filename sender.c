@@ -126,6 +126,7 @@ int main(int argc, char *argv[]) {
             clock_gettime(CLOCK_MONOTONIC, &end);
             time_taken = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) * 1e-9;
             total_time += time_taken;
+            // printf("Total time taken in sending msg: %f\n", total_time);
 
             sem_post(sem_receiver);
         }else if (feof(fmessage)) { //fgets 回傳 NULL 且為 EOF (fgets 會讀取到 \n 或 EOF 或讀取失敗才會回傳 NULL)
